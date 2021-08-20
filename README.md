@@ -1,2 +1,2 @@
 # kaggle-bike-sharing-competition
-Simple linear model for the bike sharing competition from Kaggle
+Various data analyses for the bike sharing competition from Kaggle

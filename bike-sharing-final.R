@@ -1,7 +1,19 @@
 # loading packages
 pkgs_to_load <- c("ggplot2", "car", "magrittr", "dplyr", "caTools", "Metrics", "AER",
     "FNN", "rpart", "mgcv", "randomForest")
-pkgs_loaded <- sapply(pkgs_to_load, library, character.only = TRUE)
+
+sapply(pkgs_to_load, FUN =
+    function(x){
+        # install package if not installed
+        if (!(x %in% installed.packages())){
+            install.packages(x, character.only = TRUE)
+        }
+        # load package if not yet loaded
+        if (!(x %in% (.packages()))){
+            library(x, character.only = TRUE)
+        }
+    }
+)
 
 data <- read.csv("/home/lfppfs/Desktop/Programming/kaggle/bike-sharing-competition/train.csv")
 str(data)
@@ -145,6 +157,7 @@ test_data_filtered <- test_data %>% select(!c(atemp))
 
 predicted_values <- predict(bike_lm_v4_log10, test_data_filtered)
 rmsle(test_data_filtered$count, predicted_values)
+# rmsle = 3.8205
 
 # GLM
 # a poisson is adequate for modeling this regression, since count is a positive integer and there will not be any coefficients < 0
@@ -190,7 +203,7 @@ predicted_values <- predict(gam_v4, test_data_filtered)
 rmsle(test_data_filtered$count, predicted_values)
 # has lower rmsle than linear model
 # using data with seasons = c(summer, winter) lowers the fit of the model,
-# giving a rmsle = 3.17 (not shown here)
+# giving a rmsle = 3.162
 
 # using interaction hour:workingday
 gam_v5 <- gam(count ~ season + workingday + holiday + weather + s(temp) +
@@ -200,6 +213,7 @@ summary(gam_v5)
 predicted_values <- predict(gam_v5, test_data_filtered)
 rmsle(test_data_filtered$count, predicted_values)
 # doesnt calculate intercept and also lowers fit
+# 3.162545
 
 # decision trees
 tree_v1 <- rpart(count ~ season, method = 'anova', train_data_filtered)
@@ -207,11 +221,17 @@ tree_v1
 summary(tree_v1)
 attributes(tree_v1)
 tree_v1$cptable
+predicted_values <- predict(tree_v1, test_data_filtered)
+rmsle(test_data_filtered$count, predicted_values)
+# rmsle = 1.4767
 
 tree_v2 <- rpart(count ~ season + temp, method = 'anova', train_data_filtered)
 tree_v2
 summary(tree_v2)
 str(train_data_filtered)
+predicted_values <- predict(tree_v2, test_data_filtered)
+rmsle(test_data_filtered$count, predicted_values)
+# rmsle = 1.382127
 
 tree_v3 <- rpart(count ~ ., method = 'anova', train_data_filtered)
 tree_v3
@@ -225,6 +245,7 @@ text(tree_v3)
 
 predicted_values <- predict(tree_v3, test_data_filtered)
 rmsle(test_data_filtered$count, predicted_values)
+# rmsle = 0.8034003
 # much lower rmsle than in linear regression
 
 # excluding datetime
@@ -240,7 +261,8 @@ text(tree_v4)
 
 predicted_values <- predict(tree_v4, test_data_filtered)
 rmsle(test_data_filtered$count, predicted_values)
-# almost no difference in rmsle
+# rmsle = 0.8600685
+# little difference in rmsle
 # datetime is very important in this model so I don't think
 # excluding it is really a good move
 
@@ -257,6 +279,7 @@ varImpPlot(bike_forest)
 
 forest_predictions <- predict(bike_forest, test_data_filtered)
 rmsle(test_data_filtered$count, forest_predictions)
+# rmsle = 0.4999143
 # lower than decision tree
 
 # knn
@@ -302,7 +325,8 @@ ggplot() + geom_point(aes(x = test_data_filtered$count, y = bike_knn$pred)) +
     labs(x = "Actual test values", y = "Predicted values")
 
 rmsle(test_data_filtered$count, bike_knn$pred)
+# rmsle = 1.319791
 # higher than random forest
 
 # CONCLUSION
-# best prediction model came from random forest
+# best prediction model came from random forest, with rmsle = 0.4999143
